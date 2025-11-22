@@ -1,0 +1,791 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{graphicx}
+
+\title[Projekt 1, zadanie 18]{Numeryczne całkowanie po kole jednostkowym\\
+z użyciem złożonej metody trapezów}
+\author[Artur Czołgosz]{Artur Czołgosz, 339051\\
+grupa 2a, środa 16:15-18:00}
+\institute{Metody Numeryczne}
+\date{Projekt 1, zadanie 18}
+
+\begin{document}
+
+%------------------------------------------------
+% SLIDE 1: TYTUŁOWY
+%------------------------------------------------
+\begin{frame}
+    \titlepage
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 2: TREŚĆ ZADANIA + CEL
+%------------------------------------------------
+\begin{frame}{Treść zadania i cel projektu}
+    \textbf{Treść zadania (własnymi słowami):}
+    \begin{itemize}
+        \item Zaprojektować i zaimplementować funkcję Matlab
+        \[
+            I \approx \iint_{D} f(x,y)\,dx\,dy,
+        \]
+        gdzie $D = \{(x,y) : x^2 + y^2 \le 1\}$ (dysk jednostkowy),
+        przy użyciu złożonej metody trapezów przekształcając koło jednostkowe na kwadrat: \[
+            [-1,1] \times [-1,1]
+        \]
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{Cel projektu:}
+    \begin{itemize}
+        \item Poprawnie zaimplementować metodę numeryczną.
+        \item Przetestować poprawność programu na funkcjach z dokładnie znaną całką.
+        \item Zbadać własności numeryczne metody (zbieżność, wpływ mapowania).
+    \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 3: OPIS OBSZARU I ZMIANY ZMIENNYCH
+%------------------------------------------------
+\begin{frame}{Opis matematyczny: obszar całkowania}
+    \textbf{Obszar:} dysk jednostkowy
+    \[
+        D = \{(x,y)\in\mathbb{R}^2 : x^2 + y^2 \le 1\}.
+    \]
+
+    Przechodzimy do współrzędnych biegunowych:
+    \[
+        x = r\cos\theta,\qquad y = r\sin\theta,\qquad
+        r \in [0,1],\ \theta \in [0,2\pi],
+    \]
+    \[
+        dx\,dy = r\,dr\,d\theta.
+    \]
+
+    \textbf{Równoważna całka:}
+    \[
+        \iint_{D} f(x,y)\,dx\,dy
+        = \int_{0}^{2\pi} \int_{0}^{1} f(r\cos\theta, r\sin\theta)\, r\,dr\,d\theta.
+    \]
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 4: MAPOWANIE KWADRATU NA (r,θ)
+%------------------------------------------------
+\begin{frame}{Opis matematyczny: mapowanie kwadratu}
+    Wprowadzamy siatkę w zmiennych pomocniczych $(u,v)$:
+    \[
+        u \in [-1,1],\quad v \in [-1,1].
+    \]
+
+    Przykładowe mapowanie:
+    \begin{align*}
+        r(u) &= \frac{u+1}{2} \quad \text{(mapowanie \texttt{linear})},\\[0.3em]
+        r(u) &= \sqrt{\frac{u+1}{2}} \quad \text{(mapowanie \texttt{sqrt})},\\[0.3em]
+        \theta(v) &= \pi(v+1).
+    \end{align*}
+
+    \textbf{Jacobian całkowity:}
+    \[
+        J(u,v) = \left|\det \frac{\partial(x,y)}{\partial(u,v)}\right|
+        = r(u)\,\left|\frac{dr}{du}\right|\,\left|\frac{d\theta}{dv}\right|.
+    \]
+
+    Zastąpienie $(x,y)$ przez $(u,v)$ prowadzi do całki:
+    \[
+        \iint_{D} f(x,y)\,dx\,dy
+        = \int_{-1}^{1}\!\!\int_{-1}^{1}
+            f\bigl(x(u,v),y(u,v)\bigr)\,J(u,v)\,du\,dv.
+    \]
+\end{frame}
+
+\begin{frame}[t]{Mapowanie \texttt{linear}}
+\small
+\[
+  (u,v) \in [-1,1]^2,\qquad \theta(v) = \pi v.
+\]
+
+\textbf{Definicja:}
+\[
+  r(u) = \frac{u+1}{2},\qquad
+  x = r(u)\cos\theta(v),\quad
+  y = r(u)\sin\theta(v).
+\]
+
+\textbf{Jacobian:}
+\[
+  J(u,v) = r(u)\,\frac{dr}{du}\,\frac{d\theta}{dv},
+  \quad \frac{dr}{du} = \frac{1}{2},\ 
+  \frac{d\theta}{dv} = \pi,
+\]
+\[
+  J_{\text{linear}}(u,v)
+  = r(u)\cdot\frac{1}{2}\cdot\pi
+  = \frac{\pi}{2}r(u)
+  = \frac{\pi}{4}(u+1).
+\]
+\end{frame}
+
+
+\begin{frame}[t]{Mapowanie \texttt{sqrt}}
+\small
+\[
+  (u,v) \in [-1,1]^2,\qquad \theta(v) = \pi v.
+\]
+
+\textbf{Definicja:}
+\[
+  r(u) = \sqrt{\frac{u+1}{2}},\qquad
+  x = r(u)\cos\theta(v),\quad
+  y = r(u)\sin\theta(v).
+\]
+
+\textbf{Jacobian:}
+\[
+  J(u,v) = r(u)\,\frac{dr}{du}\,\frac{d\theta}{dv},
+  \quad \frac{dr}{du} = \frac{1}{4r(u)},\ 
+  \frac{d\theta}{dv} = \pi,
+\]
+\[
+  J_{\text{sqrt}}(u,v)
+  = r(u)\cdot\frac{1}{4r(u)}\cdot\pi
+  = \frac{\pi}{4}\quad\text{(stała)}.
+\]
+
+\begin{itemize}\itemsep2pt
+  \item Stały Jacobian $\Rightarrow$ równomierne „zagęszczenie” w promieniu.
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}[t]{Mapowanie \texttt{m1} (niepoprawne)}
+\small
+\textbf{Definicja:}
+\[
+  x(u,v) = u,\qquad
+  y(u,v) = v\sqrt{1-u^2}.
+\]
+
+\textbf{Jacobian:}
+\[
+  \frac{\partial x}{\partial u} = 1,\ 
+  \frac{\partial x}{\partial v} = 0,\ 
+  \frac{\partial y}{\partial v} = \sqrt{1-u^2},\ 
+  \frac{\partial y}{\partial u}
+   = v\frac{-u}{\sqrt{1-u^2}},
+\]
+\[
+  J_{\text{m1}}(u,v)
+  = \left|\det \frac{\partial(x,y)}{\partial(u,v)}\right|
+  = \sqrt{1-u^2}.
+\]
+
+\begin{block}{\alert{Uwaga} (krótko)}
+\footnotesize
+Mapowanie \texttt{m1} nie spełnia założeń „bezpiecznego”
+przekształcenia z wykładu (nie zachowuje gładkości na całym obszarze),
+dlatego traktujemy je tylko jako przykład eksperymentalny.
+\end{block}
+\end{frame}
+
+
+\begin{frame}[t]{Mapowanie \texttt{m3}}
+\small
+\textbf{Definicja:}
+\[
+  x(u,v) = u\sqrt{1-\frac{v^2}{2}},\qquad
+  y(u,v) = v\sqrt{1-\frac{u^2}{2}}.
+\]
+Oznaczamy
+\[
+  A(v) = \sqrt{1-\frac{v^2}{2}},\quad
+  B(u) = \sqrt{1-\frac{u^2}{2}},
+\]
+więc $x = uA,\ y = vB$.
+
+\textbf{Jacobian:}
+\[
+  \frac{\partial x}{\partial u} = A,\ 
+  \frac{\partial x}{\partial v} = -\frac{uv}{2A},\ 
+  \frac{\partial y}{\partial v} = B,\ 
+  \frac{\partial y}{\partial u} = -\frac{uv}{2B},
+\]
+\[
+  J_{\text{m3}}(u,v)
+  = A B - \frac{u^2 v^2}{4AB}.
+\]
+
+\[
+  J_{\text{m3}}(u,v)
+  = \frac{1 - \dfrac{u^2+v^2}{2}}
+         {\sqrt{1-\dfrac{u^2}{2}}\,
+          \sqrt{1-\dfrac{v^2}{2}}}.
+\]
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 5: ZŁOŻONA METODA TRAPEZÓW
+%------------------------------------------------
+\begin{frame}{Opis matematyczny: złożona metoda trapezów}
+    Na prostokącie $[-1,1]\times[-1,1]$ stosujemy siatkę:
+    \[
+        u_i = -1 + i\,h_u,\quad i=0,\dots, N_u,
+        \qquad h_u = \frac{2}{N_u},
+    \]
+    \[
+        v_j = -1 + j\,h_v,\quad j=0,\dots, N_v,
+        \qquad h_v = \frac{2}{N_v}.
+    \]
+
+    \textbf{Wzór złożonej metody trapezów 2D:}
+    \[
+        I_{N_u,N_v} =
+        \sum_{i=0}^{N_u} \sum_{j=0}^{N_v}
+          w_i^{(u)}\, w_j^{(v)}\,
+          f\bigl(x_{ij},y_{ij}\bigr)\, J_{ij}\, h_u h_v,
+    \]
+    gdzie
+    \[
+        (x_{ij},y_{ij}) = (x(u_i,v_j),y(u_i,v_j)),
+    \]
+    a $w_i^{(u)}, w_j^{(v)} \in \{1,\tfrac{1}{2}\}$ są wagami 1D metody trapezów.
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 6: WŁASNOŚCI METODY
+%------------------------------------------------
+\begin{frame}{Własności metody}
+    \begin{itemize}
+        \item Metoda trapezów 1D ma rząd zbieżności $O(h^2)$
+              przy dostatecznej gładkości funkcji.
+        \item Dla 2D na prostokącie: błąd rzędu
+              \[
+                  |I - I_{N_u,N_v}| = O(h_u^2 + h_v^2).
+              \]
+        \item Jakość przybliżenia na kole zależy od:
+        \begin{itemize}
+            \item gładkości funkcji $f$ na dysku,
+            \item gładkości użytego mapowania $(u,v)\mapsto (x,y)$,
+            \item zagęszczenia siatki ($N_u$, $N_v$).
+        \end{itemize}
+        \item Porównujemy różne mapowania (\texttt{linear}, \texttt{sqrt}, ...),
+              obserwując wpływ na błąd i zbieżność.
+    \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 7: TESTY POPRAWNOŚCI – ZAŁOŻENIA
+%------------------------------------------------
+\begin{frame}{Testy poprawności programu}
+    \textbf{Idea:} testujemy program na funkcjach,
+    dla których znamy dokładną wartość całki po dysku.
+
+    \textbf{Przykładowe funkcje testowe:}
+    \begin{itemize}
+        \item $f_1(x,y) = 1$,\quad
+              $\displaystyle I = \iint_{D} 1\,dx\,dy = \pi$.
+        \item $f_2(x,y) = x$, $f_3(x,y) = y$,\quad
+              całka równa 0 (symetria).
+        \item $f_4(x,y) = x^2 + y^2 = r^2$,\quad
+              $\displaystyle I = \int_0^{2\pi}\!\!\int_0^1 r^2 \cdot r\,dr\,d\theta 
+              = \frac{\pi}{2}$.
+        \item (opcjonalnie) inne wielomiany lub funkcje gładkie.
+    \end{itemize}
+
+    Na slajdach z testami pokazujemy:
+    \begin{itemize}
+        \item nazwę funkcji $f$,
+        \item dokładną wartość całki,
+        \item wartości numeryczne dla różnych $N$,
+        \item błąd bezwzględny.
+    \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 8: TESTY POPRAWNOŚCI – PRZYKŁADOWA TABELA
+%------------------------------------------------
+\begin{frame}{Testy poprawności: przykład dla $f(x,y)=1$}
+    \begin{table}
+        \centering
+        \begin{tabular}{cccc}
+            \toprule
+            $N_u=N_v$ & $I_{\text{num}}$ & $I_{\text{dokładne}}$ & $|błąd|$ \\
+            \midrule
+            4   & 3.1416 & 3.1416 & $<10^{-4}$ \\
+            8   & 3.1416 & 3.1416 & $<10^{-6}$ \\
+            16  & 3.1416 & 3.1416 & $<10^{-8}$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.5em}
+    \textbf{Wnioski:}
+    \begin{itemize}
+        \item Program daje poprawne wyniki dla prostych funkcji.
+        \item Błąd maleje przy zagęszczaniu siatki.
+        \item Na tym etapie przede wszystkim potwierdzamy
+              poprawność \emph{implementacji}.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[t]{Testy poprawności: $f(x,y)=1$ (linear, sqrt)}
+\scriptsize
+Dokładna wartość: $I_{\text{exact}} = \pi$.
+
+\medskip
+\textbf{Mapping \texttt{linear}}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+4  & 3.14159265358979 & 0 \\
+8  & 3.14159265358979 & $4.44\cdot 10^{-16}$ \\
+16 & 3.14159265358979 & 0 \\
+32 & 3.14159265358979 & 0 \\
+64 & 3.14159265358979 & 0 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\textbf{Mapping \texttt{sqrt}}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+4  & 3.14159265358979 & 0 \\
+8  & 3.14159265358979 & $1.78\cdot 10^{-15}$ \\
+16 & 3.14159265358980 & $3.11\cdot 10^{-15}$ \\
+32 & 3.14159265358979 & $1.78\cdot 10^{-15}$ \\
+64 & 3.14159265358980 & $3.11\cdot 10^{-15}$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize
+W obu przypadkach błąd jest na poziomie błędu zaokrągleń.
+\end{frame}
+
+\begin{frame}[t]{Testy poprawności: funkcje z zerową całką}
+\scriptsize
+Dokładna wartość: $I_{\text{exact}} = 0$.
+
+\medskip
+\textbf{$f(x,y)=x$, mapping \texttt{linear}}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}|$ \\
+\midrule
+4  & $3.21\cdot 10^{-17}$ & $3.21\cdot 10^{-17}$ \\
+8  & $5.97\cdot 10^{-17}$ & $5.97\cdot 10^{-17}$ \\
+16 & $8.42\cdot 10^{-17}$ & $8.42\cdot 10^{-17}$ \\
+32 & $8.46\cdot 10^{-17}$ & $8.46\cdot 10^{-17}$ \\
+64 & $9.84\cdot 10^{-17}$ & $9.84\cdot 10^{-17}$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\textbf{$f(x,y)=y$, mapping \texttt{sqrt}}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}|$ \\
+\midrule
+4  & $-1.52\cdot 10^{-18}$ & $1.52\cdot 10^{-18}$ \\
+8  & $9.71\cdot 10^{-18}$  & $9.71\cdot 10^{-18}$ \\
+16 & $2.08\cdot 10^{-17}$  & $2.08\cdot 10^{-17}$ \\
+32 & $7.46\cdot 10^{-18}$  & $7.46\cdot 10^{-18}$ \\
+64 & $1.48\cdot 10^{-18}$  & $1.48\cdot 10^{-18}$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize
+Błąd jest na poziomie precyzji maszynowej — test symetrii zdany.
+\end{frame}
+
+
+\begin{frame}[t]{Test poprawności: $f(x,y)=|x|$ (linear)}
+\scriptsize
+Dokładna wartość: $I_{\text{exact}} = \dfrac{4}{3} \approx 1.333333\ldots$
+
+\medskip
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+16  & 1.3296958445 & $3.64\cdot 10^{-3}$ \\
+32  & 1.3324248703 & $9.08\cdot 10^{-4}$ \\
+64  & 1.3331062744 & $2.27\cdot 10^{-4}$ \\
+128 & 1.3332765721 & $5.68\cdot 10^{-5}$ \\
+256 & 1.3333191433 & $1.42\cdot 10^{-5}$ \\
+512 & 1.3333297858 & $3.55\cdot 10^{-6}$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize
+Funkcja nie jest gładka na $x=0$ $\Rightarrow$ zbieżność wolniejsza niż dla funkcji gładkich.
+\end{frame}
+
+
+\begin{frame}[t]{Test: $f(x,y)=x^2+y^2$ (linear)}
+\scriptsize
+Dokładna wartość: $I_{\text{exact}} = 1.5707963268$.
+
+\medskip
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+4  & 1.5953400194 & $2.45\cdot 10^{-2}$ \\
+8  & 1.5769322499 & $6.14\cdot 10^{-3}$ \\
+16 & 1.5723303076 & $1.53\cdot 10^{-3}$ \\
+32 & 1.5711798220 & $3.83\cdot 10^{-4}$ \\
+64 & 1.5708922006 & $9.59\cdot 10^{-5}$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize
+Błąd maleje ok. 4 razy przy podwojeniu $N$ (zbieżność $\sim h^2$).
+\end{frame}
+
+\begin{frame}[t]{Test: $f(x,y)=x^2+y^2$ (sqrt, m3)}
+\scriptsize
+Dokładna wartość: $I_{\text{exact}} = 1.5707963268$.
+
+\medskip
+\textbf{Mapping \texttt{sqrt}}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+4  & 1.5707963268 & 0 \\
+8  & 1.5707963268 & $2.22\cdot 10^{-16}$ \\
+16 & 1.5707963268 & 0 \\
+32 & 1.5707963268 & 0 \\
+64 & 1.5707963268 & 0 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\textbf{Mapping \texttt{m3}}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+4  & 1.5594268746 & $1.14\cdot 10^{-2}$ \\
+8  & 1.5678594434 & $2.94\cdot 10^{-3}$ \\
+16 & 1.5700554165 & $7.41\cdot 10^{-4}$ \\
+32 & 1.5706106664 & $1.86\cdot 10^{-4}$ \\
+64 & 1.5707498844 & $4.64\cdot 10^{-5}$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize
+Dla funkcji radialnej \texttt{sqrt} jest praktycznie idealne.
+\end{frame}
+
+
+\begin{frame}[t]{Test: $f(x,y)=x^2$ (linear)}
+\scriptsize
+Dokładna wartość: $I_{\text{exact}} = 0.7853981634$.
+
+\medskip
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+4  & 0.7976700097 & $1.23\cdot 10^{-2}$ \\
+8  & 0.7884661250 & $3.07\cdot 10^{-3}$ \\
+16 & 0.7861651538 & $7.67\cdot 10^{-4}$ \\
+32 & 0.7855899110 & $1.92\cdot 10^{-4}$ \\
+64 & 0.7854461003 & $4.79\cdot 10^{-5}$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize
+Znów widać zbieżność $\sim h^2$ dla mapowania \texttt{linear}.
+\end{frame}
+
+\begin{frame}[t]{Test: $f(x,y)=x^2$ (sqrt, m3)}
+\scriptsize
+Dokładna wartość: $I_{\text{exact}} = 0.7853981634$.
+
+\medskip
+\textbf{Mapping \texttt{sqrt}}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+4  & 0.7853981634 & 0 \\
+8  & 0.7853981634 & 0 \\
+16 & 0.7853981634 & 0 \\
+32 & 0.7853981634 & 0 \\
+64 & 0.7853981634 & 0 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\textbf{Mapping \texttt{m3}}
+\renewcommand{\arraystretch}{0.95}
+\begin{tabular}{ccc}
+\toprule
+$N_u=N_v$ & $I_{\text{num}}$ & $|I_{\text{num}}-I_{\text{exact}}|$ \\
+\midrule
+4  & 0.7797134373 & $5.68\cdot 10^{-3}$ \\
+8  & 0.7839297217 & $1.47\cdot 10^{-3}$ \\
+16 & 0.7850277082 & $3.70\cdot 10^{-4}$ \\
+32 & 0.7853053332 & $9.28\cdot 10^{-5}$ \\
+64 & 0.7853749422 & $2.32\cdot 10^{-5}$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\footnotesize
+\texttt{sqrt} jest tu znowu najdokładniejsze, \texttt{m3} stopniowo dochodzi do wyniku.
+\end{frame}
+
+
+%------------------------------------------------
+% SLIDE 9: EKSPERYMENTY NUMERYCZNE – PLAN
+%------------------------------------------------
+\begin{frame}{Eksperymenty numeryczne – plan}
+    \textbf{Cel eksperymentów:} zbadać własności numeryczne metody:
+    \begin{itemize}
+        \item zbieżność błędu w zależności od $N_u$, $N_v$,
+        \item porównanie różnych mapowań (\texttt{linear}, \texttt{sqrt}, ...),
+        \item wpływ kształtu i gładkości funkcji $f$.
+    \end{itemize}
+
+    \textbf{Przykładowe eksperymenty:}
+    \begin{itemize}
+        \item Analiza zbieżności dla kilku funkcji gładkich
+              (np. $f(x,y)=1,\ x^2+y^2,\ \sin x \cos y$).
+        \item Porównanie błędu dla różnych mapowań przy tym samym $N$.
+        \item Zestawienie czasu obliczeń w zależności od wielkości siatki.
+    \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 10: EKSPERYMENT – ZBIEŻNOŚĆ BŁĘDU
+%------------------------------------------------
+\begin{frame}{Eksperyment: zbieżność błędu}
+    \textbf{Przykład:} funkcja $f(x,y) = x^2 + y^2$,
+    mapowanie \texttt{linear}.
+
+    \begin{table}
+        \centering
+        \begin{tabular}{cccc}
+            \toprule
+            $N$ & $I_{\text{num}}$ & $|błąd|$ & $|błąd_{poprz}|/|błąd|$ \\
+            \midrule
+            4   & \dots & \dots & -- \\
+            8   & \dots & \dots & $\approx 4$ \\
+            16  & \dots & \dots & $\approx 4$ \\
+            32  & \dots & \dots & $\approx 4$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.5em}
+    \begin{itemize}
+        \item Stosunek błędów $\approx 4$ będzie wskazywać na rząd zbieżności
+              zbliżony do $O(h^2)$ (podwojenie liczby podziałów
+              zmniejsza błąd około czterokrotnie).
+    \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 11: EKSPERYMENT – PORÓWNANIE MAPOWAŃ
+%------------------------------------------------
+\begin{frame}{Eksperyment: porównanie mapowań}
+    \textbf{Przykład:} funkcja gładka $f(x,y)=x^2 + y^2$,
+    porównanie mapowań przy tym samym $N$.
+
+    \begin{table}
+        \centering
+        \begin{tabular}{ccc}
+            \toprule
+            Mapowanie & $I_{\text{num}}$ & $|błąd|$ \\
+            \midrule
+            \texttt{linear} & \dots & \dots \\
+            \texttt{sqrt}   & \dots & \dots \\
+            \texttt{m1}     & \dots & \dots \\
+            \texttt{m3}     & \dots & \dots \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 12: EKSPERYMENT – ZBIEŻNOŚĆ BŁĘDU (TABELA)
+%------------------------------------------------
+\begin{frame}{Funkcje testowe i wartości całek}
+    Rozważane funkcje testowe i ich wartości na dysku jednostkowym:
+    \[
+        I_k = \iint_D f_k(x,y)\,dx\,dy
+    \]
+    \begin{table}
+        \centering
+        \begin{tabular}{ccc}
+            \toprule
+            Funkcja & $f(x,y)$ & $I = \displaystyle\iint_D f(x,y)\,dx\,dy$ \\
+            \midrule
+            $f_1$ & $1$ & $\pi$ \\ [0.8em]
+            $f_2$ & $x$ & $0$ \\ [0.8em]
+            $f_3$ & $|x|$ & $\dfrac{4}{3}$ \\ [0.8em]
+            $f_4$ & $x^2 + y^2$ & $\dfrac{\pi}{2}$ \\ [0.8em]
+            $f_5$ & $x^2$ & $\dfrac{\pi}{4}$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 13: Funkcja f(x,y) = 1
+%------------------------------------------------
+\begin{frame}{Porównanie mapowań dla $f(x,y)=1$}
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f1_linear}
+        
+        \small mapowanie \texttt{linear}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f1_m3}
+        
+        \small mapowanie \texttt{m3}
+    \end{minipage}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 14: Funkcja f(x,y) = x
+%------------------------------------------------
+\begin{frame}{Porównanie mapowań dla $f(x,y)=x$}
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f2_linear}
+        
+        \small mapowanie \texttt{linear}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f2_root}
+        
+        \small mapowanie \texttt{sqrt}
+    \end{minipage}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 15: Funkcja f(x,y) = |x|
+%------------------------------------------------
+\begin{frame}{Porównanie mapowań dla $f(x,y)=|x|$}
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f3_linear}
+        
+        \small mapowanie \texttt{linear}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f3_m3}
+        
+        \small mapowanie \texttt{m3}
+    \end{minipage}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 16: Funkcja f(x,y) = x^2 + y^2
+%------------------------------------------------
+\begin{frame}{Porównanie mapowań dla $f(x,y)=x^2 + y^2$}
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f4_linear}
+        
+        \small mapowanie \texttt{linear}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f4_m3}
+        
+        \small mapowanie \texttt{m3}
+    \end{minipage}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 17: Funkcja f(x,y) = x^2
+%------------------------------------------------
+\begin{frame}{Porównanie mapowań dla $f(x,y)=x^2$}
+    \centering
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f5_linear}
+        
+        \small mapowanie \texttt{linear}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{f5_m3}
+        
+        \small mapowanie \texttt{m3}
+    \end{minipage}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 18: Komentarze do wykresów
+%------------------------------------------------
+\begin{frame}{Komentarze do wykresów}
+    \begin{itemize}
+        \item Dla wszystkich funkcji za pomocą metody \texttt{linear} obserwujemy zbieżność
+              rzędu około $O(h^2)$, zgodnie z teorią.
+        \item Na wykresach nie pokazano wszystkich mapowań.
+        \item Nie pokazano dla wszystkich funkcji metody \texttt{sqrt},
+                ale dla niektórych funkcji od samego początku dawała dokładny wynik.
+    \end{itemize}
+\end{frame}
+
+%------------------------------------------------
+% SLIDE 18: PODSUMOWANIE
+%------------------------------------------------
+\begin{frame}{Podsumowanie}
+    \begin{itemize}
+        \item Zaimplementowano złożoną metodę trapezów
+              do całkowania po kole jednostkowym z użyciem
+              różnych mapowań kwadratu na dysk.
+        \item Testy poprawności na prostych funkcjach
+              potwierdziły poprawność implementacji.
+        \item Eksperymenty numeryczne pokazały oczekiwany
+              rząd zbieżności $O(h^2)$.
+        \item Porównanie mapowań wskazało, że wybór
+              mapowania ma istotny wpływ na dokładność
+              dla niektórych funkcji.
+    \end{itemize}
+\end{frame}
+
+\end{document}

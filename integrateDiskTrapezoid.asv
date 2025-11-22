@@ -5,14 +5,12 @@ function [q, err, time] = integrateDiskTrapezoid(f, n1, n2, mapping)
 % integrateDiskTrapezoid  Całkowanie po dysku jednostkowym metodą trapezów
 %                         z prostym oszacowaniem błędu.
 %
-%   [q, err, time] = integrateDiskTrapezoid(f, n1, n2, mapping)
+%   [res, err, time] = integrateDiskTrapezoid(f, n1, n1, mapping)
 %
 % Wejścia:
 %   f       - uchwyt do funkcji @(x,y), najlepiej wektoryzowanej
 %   n1, n2  - liczba podprzedziałów w kierunkach u, v na [-1,1]
-%   mapping - 'linear', 'sqrt', 'm1', 'm3' (zgodnie z mapUVtoXY)
-%             Jedyna zalecana metoda to 'linear', z pozostałych korzystasz
-%             na własną odpowiedzialność
+%   mapping - 'linear' lub 'sqrt' (zgodnie z mapUVtoXY)
 %
 % Wyjścia:
 %   q    - dokładniejsze przybliżenie całki (na siatce 2Nu x 2Nv)
