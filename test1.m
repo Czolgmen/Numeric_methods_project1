@@ -1,4 +1,4 @@
-function testIntegrateDiskTrapezoid()
+function test1()
 % Projekt 1, zadanie 18
 % Artur Czołgosz, 339051
 %
@@ -32,7 +32,7 @@ function testIntegrateDiskTrapezoid()
             Nu = t.N0 * 2^lev;
             Nv = Nu;
 
-            I_num = integrateDiskTrapezoid(t.f, Nu, Nv, t.mapping);
+            I_num = P1Z18_ACZ_integrateDiskTrapezoid(t.f, Nu, Nv, t.mapping);
             diff_val = abs(I_num - t.I_exact);
 
             myPrint(1, '    Nu = %5d, Nv = %5d:\n', Nu, Nv);

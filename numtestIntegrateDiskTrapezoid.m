@@ -10,7 +10,7 @@ function numtestIntegrateDiskTrapezoid()
 %
 %   Uruchom:
 %       >> numtestIntegrateDiskTrapezoid
-    MAKE_PLOTS = true;  % <- gdy true, rysuje wykresy zbieżności
+    MAKE_PLOTS = false;  % <- gdy true, rysuje wykresy zbieżności
 
     N_list   = [4 8 16 32 64];
     mappings = {'linear','sqrt', 'm1', 'm3'};
@@ -85,7 +85,7 @@ function numtestTables(tests, mappings, N_list)
                 Nu = N;
                 Nv = N;
 
-                [I_num, err_est, t_exec] = integrateDiskTrapezoid( ...
+                [I_num, err_est, t_exec] = P1Z18_ACZ_integrateDiskTrapezoid( ...
                     tests(t).f, Nu, Nv, mapping);
                 abs_err = abs(I_num - tests(t).I_exact);
 
@@ -130,7 +130,7 @@ function numtestConvergence(tests, mappings, makePlots)
                 Nu = N;
                 Nv = N;
 
-                [I_num, err_est, ~] = integrateDiskTrapezoid( ...
+                [I_num, err_est, ~] = P1Z18_ACZ_integrateDiskTrapezoid( ...
                     tests(t).f, Nu, Nv, mapping);
                 abs_err = abs(I_num - tests(t).I_exact);
 

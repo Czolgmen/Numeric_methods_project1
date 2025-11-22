@@ -1,4 +1,4 @@
-function [q, err, time] = integrateDiskTrapezoid(f, n1, n2, mapping)
+function [q, err, time] = P1Z18_ACZ_integrateDiskTrapezoid(f, n1, n2, mapping)
 % Projekt 1, zadanie 18
 % Artur Czołgosz, 339051
 %
